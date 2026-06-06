@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Lushi — Your Personal AI Companion</title>
+
+<!-- PWA / Mobile meta -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0d0d14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root {
+  --bg: #0d0d14;
+  --surface: #13131e;
+  --card: #1a1a28;
+  --card2: #1f1f30;
+  --border: rgba(255,255,255,0.07);
+  --accent: #a78bfa;
+  --accent2: #f472b6;
+  --accent3: #34d399;
+  --accent4: #fbbf24;
+  --text: #f1f0fb;
+  --muted: #7c7c9a;
+  --red: #f87171;
+  --blue: #60a5fa;
+  --orange: #fb923c;
+  --r: 16px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); font-family: 'Outfit', sans-serif; color: var(--text); user-select: none; }
+
+/* ── SPLASH ── */
+#splash {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1rem;
+}
+.splash-logo { font-size: 3.5rem; font-weight: 900; letter-spacing: -0.03em; }
+.splash-logo span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.splash-sub { color: var(--muted); font-size: 0.9rem; letter-spacing: 0.15em; text-transform: uppercase; }
+.splash-ring {
+  width: 70px; height: 70px; border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: var(--accent);
+  border-right-color: var(--accent2);
+  animation: spin 1s linear infinite;
+  margin-top: 1rem;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── SHELL ── */
+#app { display: none; flex-direction: column; height: 100vh; }
+
+/* ── TOP BAR ── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.9rem 1.2rem 0.6rem;
+  background: var(--bg);
+  flex-shrink: 0;
+}
+.topbar-logo { font-size: 1.4rem; font-weight: 900; }
+.topbar-logo span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.topbar-date { font-size: 0.75rem; color: var(--muted); }
+.topbar-right { display: flex; gap: 0.7rem; align-items: center; }
+.icon-btn { width: 36px; height: 36px; border-radius: 10px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted); font-size: 0.9rem; transition: all 0.2s; }
+.icon-btn:hover, .icon-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(167,139,250,0.1); }
+.voice-btn { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; font-size: 0.9rem; box-shadow: 0 4px 15px rgba(167,139,250,0.4); transition: all 0.2s; }
+.voice-btn.listening { animation: voicePulse 1s ease-in-out infinite; }
+@keyframes voicePulse { 0%,100%{box-shadow:0 4px 15px rgba(167,139,250,0.4)} 50%{box-shadow:0 4px 30px rgba(167,139,250,0.8), 0 0 0 10px rgba(167,139,250,0.15)} }
+
+/* ── SCROLL AREA ── */
+.scroll-area { flex: 1; overflow-y: auto; padding: 0 1rem 1rem; scroll-behavior: smooth; }
+.scroll-area::-webkit-scrollbar { width: 0; }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  display: flex; align-items: center; justify-content: space-around;
+  padding: 0.6rem 0 calc(0.6rem + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; cursor: pointer; padding: 0.2rem 1rem; transition: all 0.2s; }
+.nav-item i { font-size: 1.1rem; color: var(--muted); transition: all 0.2s; }
+.nav-item span { font-size: 0.6rem; color: var(--muted); font-weight: 600; letter-spacing: 0.05em; transition: all 0.2s; }
+.nav-item.active i { color: var(--accent); }
+.nav-item.active span { color: var(--accent); }
+
+/* ── PAGES ── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── CARDS ── */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 1rem; margin-bottom: 0.8rem; }
+.card-title { font-size: 0.7rem; color: var(--muted); font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0.8rem; }
+
+/* ── HOME PAGE ── */
+.greeting-card {
+  background: linear-gradient(135deg, #1e1b3a, #2d1b4e);
+  border: 1px solid rgba(167,139,250,0.2);
+  border-radius: var(--r); padding: 1.2rem; margin-bottom: 0.8rem;
+  position: relative; overflow: hidden;
+}
+.greeting-card::before {
+  content: ''; position: absolute; top: -40px; right: -40px;
+  width: 120px; height: 120px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(167,139,250,0.2), transparent);
+}
+.greeting { font-size: 1.1rem; font-weight: 700; }
+.greeting em { color: var(--accent); font-style: normal; }
+.greeting-sub { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+.progress-row { display: flex; align-items: center; gap: 0.8rem; margin-top: 1rem; }
+.prog-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 999px; overflow: hidden; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 999px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+.prog-pct { font-size: 0.8rem; font-weight: 700; color: var(--accent); }
+
+/* Wake up card */
+.wakeup-card {
+  background: linear-gradient(135deg, #1e2d1b, #1b2d2a);
+  border: 1px solid rgba(52,211,153,0.2);
+  border-radius: var(--r); padding: 1rem; margin-bottom: 0.8rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.wakeup-left { display: flex; align-items: center; gap: 0.8rem; }
+.wakeup-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(52,211,153,0.15); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+.wakeup-time { font-size: 1.6rem; font-weight: 800; color: var(--accent3); line-height: 1; }
+.wakeup-label { font-size: 0.72rem; color: var(--muted); }
+.small-btn { padding: 0.4rem 0.9rem; border-radius: 8px; border: 1px solid var(--border); background: var(--card2); color: var(--text); font-family: 'Outfit', sans-serif; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.small-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Routine list */
+.routine-item {
+  display: flex; align-items: center; gap: 0.9rem;
+  padding: 0.8rem; border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-bottom: 0.5rem;
+  background: var(--card2);
+  cursor: pointer; transition: all 0.2s;
+  position: relative; overflow: hidden;
+}
+.routine-item.done { opacity: 0.6; }
+.routine-item.done::after { content: ''; position: absolute; left: 0; top: 50%; height: 1px; background: var(--muted); width: 100%; pointer-events: none; }
+.routine-item:active { transform: scale(0.98); }
+.ri-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+.ri-info { flex: 1; }
+.ri-name { font-size: 0.9rem; font-weight: 600; }
+.ri-time { font-size: 0.72rem; color: var(--muted); margin-top: 0.1rem; }
+.ri-check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+.routine-item.done .ri-check { background: var(--accent3); border-color: var(--accent3); color: white; font-size: 0.7rem; }
+.ri-status { font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 999px; }
+.status-now { background: rgba(167,139,250,0.2); color: var(--accent); }
+.status-next { background: rgba(251,191,36,0.15); color: var(--accent4); }
+.status-done { background: rgba(52,211,153,0.15); color: var(--accent3); }
+.status-miss { background: rgba(248,113,113,0.15); color: var(--red); }
+
+/* ── MUSIC CARD ── */
+.music-card {
+  background: linear-gradient(135deg, #1e1b3a, #2a1535);
+  border: 1px solid rgba(244,114,182,0.2);
+  border-radius: var(--r); padding: 1rem; margin-bottom: 0.8rem;
+}
+.music-genres { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.7rem; }
+.genre-pill {
+  padding: 0.35rem 0.9rem; border-radius: 999px;
+  border: 1px solid var(--border); font-size: 0.75rem; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; background: var(--card2);
+}
+.genre-pill.active { border-color: var(--accent2); background: rgba(244,114,182,0.15); color: var(--accent2); }
+
+/* ── SCHEDULE PAGE ── */
+.time-block {
+  display: flex; gap: 0.8rem; margin-bottom: 0.6rem;
+  align-items: flex-start;
+}
+.time-col { width: 52px; text-align: right; flex-shrink: 0; }
+.time-label { font-size: 0.72rem; color: var(--muted); font-weight: 600; font-family: 'Outfit', monospace; }
+.time-line { flex: 1; }
+.time-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 3px; flex-shrink: 0; }
+.sched-card {
+  flex: 1; border-radius: 12px; padding: 0.7rem 0.9rem;
+  border-left: 3px solid;
+  background: var(--card2);
+  cursor: pointer;
+}
+.sched-name { font-size: 0.88rem; font-weight: 700; }
+.sched-dur { font-size: 0.72rem; color: var(--muted); margin-top: 0.1rem; }
+
+/* ── NOTES PAGE ── */
+.note-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 1rem; margin-bottom: 0.8rem;
+  cursor: pointer; transition: all 0.2s;
+}
+.note-card:hover { border-color: rgba(167,139,250,0.3); }
+.note-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.3rem; }
+.note-preview { font-size: 0.8rem; color: var(--muted); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.note-meta { font-size: 0.68rem; color: var(--muted); margin-top: 0.5rem; }
+.fab {
+  position: fixed; bottom: calc(70px + env(safe-area-inset-bottom)); right: 1rem;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; color: white; font-size: 1.2rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; box-shadow: 0 4px 20px rgba(167,139,250,0.4);
+  transition: all 0.2s; z-index: 50;
+}
+.fab:hover { transform: scale(1.08); }
+
+/* ── STATS PAGE ── */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; margin-bottom: 0.8rem; }
+.stat-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 1rem; text-align: center; }
+.stat-num { font-size: 2rem; font-weight: 800; line-height: 1; }
+.stat-lbl { font-size: 0.72rem; color: var(--muted); margin-top: 0.3rem; }
+.streak-flame { color: var(--orange); }
+.week-row { display: flex; gap: 0.4rem; justify-content: space-between; margin-top: 0.5rem; }
+.day-dot { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+.day-circle { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; }
+.day-circle.done { background: var(--accent3); border-color: var(--accent3); color: white; }
+.day-circle.today { border-color: var(--accent); color: var(--accent); }
+.day-lbl { font-size: 0.6rem; color: var(--muted); }
+
+/* ── SETTINGS PAGE ── */
+.setting-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.9rem 1rem; border-bottom: 1px solid var(--border);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-size: 0.88rem; font-weight: 600; }
+.setting-sub { font-size: 0.72rem; color: var(--muted); margin-top: 0.1rem; }
+.toggle { width: 44px; height: 24px; border-radius: 999px; background: var(--border); position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+.toggle.on { background: var(--accent); }
+.toggle::after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: white; top: 3px; left: 3px; transition: left 0.2s; }
+.toggle.on::after { left: 23px; }
+.time-input { background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 0.3rem 0.6rem; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 0.85rem; font-weight: 700; width: 90px; text-align: center; }
+.time-input:focus { outline: none; border-color: var(--accent); }
+
+/* ── LUSHI VOICE OVERLAY ── */
+#voice-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(13,13,20,0.95);
+  flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem;
+}
+#voice-overlay.show { display: flex; }
+.voice-rings { position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; }
+.voice-ring { position: absolute; border-radius: 50%; border: 2px solid var(--accent); opacity: 0; }
+.voice-ring:nth-child(1) { width: 60px; height: 60px; animation: ringPulse 1.5s ease-out infinite; }
+.voice-ring:nth-child(2) { width: 85px; height: 85px; animation: ringPulse 1.5s ease-out 0.3s infinite; }
+.voice-ring:nth-child(3) { width: 110px; height: 110px; animation: ringPulse 1.5s ease-out 0.6s infinite; }
+@keyframes ringPulse { 0%{opacity:0.6;transform:scale(0.8)} 100%{opacity:0;transform:scale(1.2)} }
+.voice-center { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: white; z-index: 1; }
+.voice-text { font-size: 1.1rem; font-weight: 600; color: var(--text); }
+.voice-heard { font-size: 0.85rem; color: var(--accent); min-height: 1.2rem; text-align: center; padding: 0 2rem; }
+.voice-close { padding: 0.6rem 2rem; border-radius: 999px; background: var(--card); border: 1px solid var(--border); color: var(--muted); font-family: 'Outfit', sans-serif; font-size: 0.85rem; cursor: pointer; }
+
+/* ── MODAL ── */
+#modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,0.7); align-items: flex-end; justify-content: center;
+}
+#modal-overlay.show { display: flex; }
+.modal-sheet {
+  background: var(--surface); border-radius: 20px 20px 0 0;
+  padding: 1.5rem; width: 100%; max-height: 80vh; overflow-y: auto;
+}
+.modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 999px; margin: 0 auto 1.2rem; }
+.modal-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 1.2rem; }
+.inp { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 0.8rem 1rem; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 0.9rem; margin-bottom: 0.8rem; }
+.inp:focus { outline: none; border-color: var(--accent); }
+textarea.inp { resize: none; min-height: 100px; }
+.btn-primary { width: 100%; padding: 0.9rem; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: white; font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 700; cursor: pointer; }
+.btn-cancel { width: 100%; padding: 0.8rem; border-radius: 12px; background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: 'Outfit', sans-serif; font-size: 0.9rem; cursor: pointer; margin-top: 0.5rem; }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: calc(75px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--card2); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.6rem 1.4rem; font-size: 0.82rem; font-weight: 600;
+  opacity: 0; transition: all 0.3s; z-index: 400; white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── LUSHI CHAT BUBBLE ── */
+.lushi-bubble {
+  background: linear-gradient(135deg, #1e1b3a, #2a1535);
+  border: 1px solid rgba(167,139,250,0.3);
+  border-radius: 16px; padding: 0.9rem 1rem;
+  margin-bottom: 0.8rem;
+  display: flex; align-items: flex-start; gap: 0.8rem;
+}
+.lushi-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
+.lushi-msg { font-size: 0.85rem; line-height: 1.6; color: var(--text); }
+.lushi-msg strong { color: var(--accent); }
+
+/* screen time ring */
+.ring-wrap { display: flex; justify-content: center; margin: 0.5rem 0; }
+svg.ring-svg { transform: rotate(-90deg); }
+.ring-bg { fill: none; stroke: var(--border); stroke-width: 8; }
+.ring-fg { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+.ring-label { text-anchor: middle; dominant-baseline: middle; font-family: 'Outfit', sans-serif; font-weight: 800; }
+
+@keyframes fadeSlideUp { from{opacity:0;transform:translateY(15px)} to{opacity:1;transform:translateY(0)} }
+.page.active .card, .page.active .routine-item, .page.active .note-card, .page.active .lushi-bubble, .page.active .wakeup-card, .page.active .music-card { animation: fadeSlideUp 0.3s ease both; }
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-logo"><span>lushi</span></div>
+  <div class="splash-sub">Your Personal AI Companion</div>
+  <div class="splash-ring"></div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-logo"><span>lushi</span></div>
+      <div class="topbar-date" id="topbar-date"></div>
+    </div>
+    <div class="topbar-right">
+      <div class="icon-btn" id="notif-btn" title="Notifications"><i class="fas fa-bell"></i></div>
+      <button class="voice-btn" id="voice-btn" title="Talk to Lushi"><i class="fas fa-microphone"></i></button>
+    </div>
+  </div>
+
+  <!-- SCROLL AREA -->
+  <div class="scroll-area" id="scroll-area">
+
+    <!-- HOME PAGE -->
+    <div class="page active" id="page-home">
+      <div class="lushi-bubble" id="lushi-greeting">
+        <div class="lushi-avatar">✨</div>
+        <div class="lushi-msg" id="lushi-msg">Good morning! I'm <strong>Lushi</strong>, your personal companion. Ready to make today amazing? 🌟</div>
+      </div>
+
+      <div class="greeting-card">
+        <div class="greeting">Good <em id="time-of-day">Morning</em>, <em>Gowri</em> 👋</div>
+        <div class="greeting-sub" id="today-str"></div>
+        <div class="progress-row">
+          <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+          <div class="prog-pct" id="prog-pct">0%</div>
+        </div>
+      </div>
+
+      <div class="wakeup-card">
+        <div class="wakeup-left">
+          <div class="wakeup-icon">🌅</div>
+          <div>
+            <div class="wakeup-time" id="wakeup-display">06:00</div>
+            <div class="wakeup-label">Wake-up alarm</div>
+          </div>
+        </div>
+        <button class="small-btn" onclick="openWakeupEdit()">Edit</button>
+      </div>
+
+      <div class="music-card">
+        <div class="card-title" style="margin:0 0 0.3rem">🎵 Morning Music Mood</div>
+        <div style="font-size:0.78rem;color:var(--muted)">What music gets you going?</div>
+        <div class="music-genres" id="music-genres">
+          <div class="genre-pill active" onclick="selectGenre(this,'Devotional 🙏')">Devotional 🙏</div>
+          <div class="genre-pill" onclick="selectGenre(this,'Tamil Hits 🎶')">Tamil Hits 🎶</div>
+          <div class="genre-pill" onclick="selectGenre(this,'Lofi Chill ☕')">Lofi Chill ☕</div>
+          <div class="genre-pill" onclick="selectGenre(this,'Motivation 💪')">Motivation 💪</div>
+          <div class="genre-pill" onclick="selectGenre(this,'Classical 🎻')">Classical 🎻</div>
+          <div class="genre-pill" onclick="selectGenre(this,'Pop Beats 🎧')">Pop Beats 🎧</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Today's Routine</div>
+        <div id="routine-list"></div>
+      </div>
+    </div>
+
+    <!-- SCHEDULE PAGE -->
+    <div class="page" id="page-schedule">
+      <div class="card" style="margin-bottom:0.8rem">
+        <div class="card-title">📅 My Day Plan</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:0.8rem">Tap any block to edit time & details</div>
+        <div id="schedule-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🛏 Bedtime</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:1.4rem;font-weight:800;color:var(--blue)" id="bedtime-display">22:30</div>
+            <div style="font-size:0.75rem;color:var(--muted)">Get to bed — rest well</div>
+          </div>
+          <button class="small-btn" onclick="openBedEdit()">Edit</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTES PAGE -->
+    <div class="page" id="page-notes">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem">
+        <div style="font-size:1rem;font-weight:700">Keep Notes</div>
+        <button class="small-btn" onclick="openNoteModal()">+ New</button>
+      </div>
+      <div id="notes-list"></div>
+    </div>
+
+    <!-- STATS PAGE -->
+    <div class="page" id="page-stats">
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-num streak-flame" id="stat-streak">🔥 0</div>
+          <div class="stat-lbl">Day Streak</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:var(--accent3)" id="stat-done">0</div>
+          <div class="stat-lbl">Done Today</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:var(--accent4)" id="stat-pending">0</div>
+          <div class="stat-lbl">Pending</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:var(--accent2)" id="stat-pct">0%</div>
+          <div class="stat-lbl">Completion</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">This Week</div>
+        <div class="week-row" id="week-row"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📱 Screen Time Today</div>
+        <div class="ring-wrap">
+          <svg class="ring-svg" width="120" height="120" viewBox="0 0 120 120">
+            <circle class="ring-bg" cx="60" cy="60" r="50"/>
+            <circle class="ring-fg" cx="60" cy="60" r="50" stroke="url(#grad1)"
+              stroke-dasharray="314" stroke-dashoffset="157" id="screen-ring"/>
+            <defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#a78bfa"/>
+              <stop offset="100%" style="stop-color:#f472b6"/>
+            </linearGradient></defs>
+            <text x="60" y="55" class="ring-label" fill="var(--text)" font-size="16" transform="rotate(90,60,60)">2h 30m</text>
+            <text x="60" y="73" class="ring-label" fill="var(--muted)" font-size="9" transform="rotate(90,60,60)">of 4h limit</text>
+          </svg>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--muted);margin-top:0.5rem">
+          <span>Goal: 4h/day</span>
+          <span style="color:var(--accent3)">✓ On track</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">⏰ Missed Reminders</div>
+        <div id="missed-list" style="font-size:0.85rem;color:var(--muted)">No missed tasks yet today! 🎉</div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div class="page" id="page-settings">
+      <div class="card" style="padding:0">
+        <div class="card-title" style="padding:1rem 1rem 0">⏰ Alarm & Wake Up</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Wake Up Time</div><div class="setting-sub">Morning alarm</div></div>
+          <input type="time" class="time-input" id="wakeup-input" value="06:00" onchange="updateWakeup(this.value)">
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Bedtime</div><div class="setting-sub">Sleep reminder</div></div>
+          <input type="time" class="time-input" id="bedtime-input" value="22:30" onchange="updateBedtime(this.value)">
+        </div>
+      </div>
+
+      <div class="card" style="padding:0">
+        <div class="card-title" style="padding:1rem 1rem 0">🎵 Music Preferences</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Play on wake up</div><div class="setting-sub" id="sel-genre-label">Devotional 🙏</div></div>
+          <div class="toggle on" id="music-toggle" onclick="toggleSetting(this)"></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Volume</div><div class="setting-sub">Alarm volume</div></div>
+          <input type="range" min="0" max="100" value="70" style="width:80px;accent-color:var(--accent)">
+        </div>
+      </div>
+
+      <div class="card" style="padding:0">
+        <div class="card-title" style="padding:1rem 1rem 0">🔔 Reminders</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Routine Reminders</div><div class="setting-sub">Alert for each task</div></div>
+          <div class="toggle on" onclick="toggleSetting(this)"></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Missed Task Alerts</div><div class="setting-sub">Loop reminder every 5 min</div></div>
+          <div class="toggle on" onclick="toggleSetting(this)"></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Voice Reminders</div><div class="setting-sub">Lushi speaks reminders</div></div>
+          <div class="toggle on" id="voice-toggle" onclick="toggleSetting(this)"></div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:0">
+        <div class="card-title" style="padding:1rem 1rem 0">📱 Screen Time</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Daily Limit</div><div class="setting-sub">Max mobile use per day</div></div>
+          <input type="number" class="time-input" value="4" min="1" max="12" style="width:60px"> h
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Focus Mode</div><div class="setting-sub">Block apps during study</div></div>
+          <div class="toggle" onclick="toggleSetting(this)"></div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:0">
+        <div class="card-title" style="padding:1rem 1rem 0">🤖 Lushi AI</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Voice Control</div><div class="setting-sub">Say "Lushi, remind me..."</div></div>
+          <div class="toggle on" onclick="toggleSetting(this)"></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Smart Suggestions</div><div class="setting-sub">AI-powered tips</div></div>
+          <div class="toggle on" onclick="toggleSetting(this)"></div>
+        </div>
+        <div class="setting-row" style="cursor:pointer" onclick="resetApp()">
+          <div><div class="setting-label" style="color:var(--red)">Reset All Data</div><div class="setting-sub">Clear all routines & notes</div></div>
+          <i class="fas fa-chevron-right" style="color:var(--muted);font-size:0.8rem"></i>
+        </div>
+      </div>
+
+      <div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:0.75rem">
+        Lushi v1.0 · Made with ♥ for Gowri
+      </div>
+    </div>
+
+  </div><!-- end scroll area -->
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="switchPage('home',this)">
+      <i class="fas fa-house"></i><span>Home</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('schedule',this)">
+      <i class="fas fa-calendar-days"></i><span>Schedule</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('notes',this)">
+      <i class="fas fa-sticky-note"></i><span>Notes</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('stats',this)">
+      <i class="fas fa-chart-bar"></i><span>Stats</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('settings',this)">
+      <i class="fas fa-gear"></i><span>Settings</span>
+    </div>
+  </div>
+</div>
+
+<!-- VOICE OVERLAY -->
+<div id="voice-overlay">
+  <div class="voice-rings">
+    <div class="voice-ring"></div>
+    <div class="voice-ring"></div>
+    <div class="voice-ring"></div>
+    <div class="voice-center"><i class="fas fa-microphone"></i></div>
+  </div>
+  <div class="voice-text">Listening for Lushi...</div>
+  <div class="voice-heard" id="voice-heard">Say "Lushi, remind me to..." or "Mark yoga done"</div>
+  <button class="voice-close" onclick="closeVoice()">✕ Close</button>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal-sheet" id="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">Add Note</div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// register service worker for PWA/offline
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(()=>{/* registration failed */});
+  });
+}
+
+// ── DATA ──
+const defaultRoutine = [
+  { id:1, name:'Brushing', icon:'🪥', color:'#34d399', bg:'rgba(52,211,153,0.15)', time:'06:10', dur:10, done:false },
+  { id:2, name:'Face Washing', icon:'💧', color:'#60a5fa', bg:'rgba(96,165,250,0.15)', time:'06:22', dur:5, done:false },
+  { id:3, name:'Yoga', icon:'🧘', color:'#a78bfa', bg:'rgba(167,139,250,0.15)', time:'06:30', dur:30, done:false },
+  { id:4, name:'Morning Walk', icon:'🚶', color:'#fbbf24', bg:'rgba(251,191,36,0.15)', time:'07:05', dur:30, done:false },
+  { id:5, name:'Bathing', icon:'🚿', color:'#f472b6', bg:'rgba(244,114,182,0.15)', time:'07:40', dur:20, done:false },
+  { id:6, name:'Breakfast / Free Time', icon:'🍽️', color:'#fb923c', bg:'rgba(251,146,60,0.15)', time:'08:05', dur:30, done:false },
+  { id:7, name:'Start Work', icon:'💻', color:'#34d399', bg:'rgba(52,211,153,0.15)', time:'08:35', dur:240, done:false },
+  { id:8, name:'Reading Book', icon:'📖', color:'#a78bfa', bg:'rgba(167,139,250,0.15)', time:'13:00', dur:30, done:false },
+  { id:9, name:'Study Time', icon:'📚', color:'#60a5fa', bg:'rgba(96,165,250,0.15)', time:'14:00', dur:120, done:false },
+  { id:10, name:'Free Time', icon:'🎮', color:'#f472b6', bg:'rgba(244,114,182,0.15)', time:'17:00', dur:60, done:false },
+  { id:11, name:'Get to Bed', icon:'🛏️', color:'#60a5fa', bg:'rgba(96,165,250,0.15)', time:'22:30', dur:0, done:false },
+];
+
+const defaultNotes = [
+  { id:1, title:'My Goals 🎯', content:'1. Master Power BI\n2. Complete Data Analyst course\n3. Get internship or job\n4. Build strong portfolio', date:'Today' },
+  { id:2, title:'Book I want to read 📖', content:'Atomic Habits by James Clear\nData Science from Scratch\nThink and Grow Rich', date:'Today' },
+];
+
+let state = {
+  routine: JSON.parse(localStorage.getItem('lushi_routine') || JSON.stringify(defaultRoutine)),
+  notes: JSON.parse(localStorage.getItem('lushi_notes') || JSON.stringify(defaultNotes)),
+  wakeup: localStorage.getItem('lushi_wakeup') || '06:00',
+  bedtime: localStorage.getItem('lushi_bedtime') || '22:30',
+  genre: localStorage.getItem('lushi_genre') || 'Devotional 🙏',
+  streak: parseInt(localStorage.getItem('lushi_streak') || '3'),
+};
+
+function save() {
+  localStorage.setItem('lushi_routine', JSON.stringify(state.routine));
+  localStorage.setItem('lushi_notes', JSON.stringify(state.notes));
+  localStorage.setItem('lushi_wakeup', state.wakeup);
+  localStorage.setItem('lushi_bedtime', state.bedtime);
+  localStorage.setItem('lushi_genre', state.genre);
+}
+
+// ── TIME HELPERS ──
+function now() {
+  const d = new Date();
+  return d.getHours() * 60 + d.getMinutes();
+}
+function toMin(t) {
+  const [h,m] = t.split(':').map(Number);
+  return h*60+m;
+}
+function fmtTime(t) {
+  const [h,m] = t.split(':').map(Number);
+  const ampm = h>=12?'PM':'AM';
+  return `${h%12||12}:${m.toString().padStart(2,'0')} ${ampm}`;
+}
+
+// ── INIT ──
+window.onload = function() {
+  setTimeout(() => {
+    document.getElementById('splash').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    initApp();
+  }, 1800);
+};
+
+function initApp() {
+  updateTopbar();
+  renderGreeting();
+  renderRoutine();
+  renderSchedule();
+  renderNotes();
+  renderStats();
+  updateWakeupDisplay();
+  updateBedDisplay();
+  setInterval(updateTopbar, 30000);
+  setInterval(checkReminders, 60000);
+  // Restore genre pills
+  document.querySelectorAll('.genre-pill').forEach(p => {
+    if(p.textContent === state.genre) p.classList.add('active');
+    else p.classList.remove('active');
+  });
+  document.getElementById('sel-genre-label').textContent = state.genre;
+  document.getElementById('wakeup-input').value = state.wakeup;
+  document.getElementById('bedtime-input').value = state.bedtime;
+}
+
+function updateTopbar() {
+  const d = new Date();
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('topbar-date').textContent =
+    `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  const h = d.getHours();
+  document.getElementById('time-of-day').textContent = h<12?'Morning':h<17?'Afternoon':'Evening';
+  const dayStr = `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`;
+  document.getElementById('today-str').textContent = dayStr + ' — Let\\'s crush it! 💪';
+}
+
+function renderGreeting() {
+  const h = new Date().getHours();
+  const msgs = [
+    `Good morning! Ready to start your routine? Wake up at <strong>${fmtTime(state.wakeup)}</strong> 🌅`,
+    `Good afternoon, Gowri! Keep going — you're doing great! 💪`,
+    `Good evening! Time to wind down. Bedtime at <strong>${fmtTime(state.bedtime)}</strong> 🌙`,
+  ];
+  document.getElementById('lushi-msg').innerHTML = msgs[h<12?0:h<17?1:2];
+}
+
+// ── ROUTINE ──
+function renderRoutine() {
+  const list = document.getElementById('routine-list');
+  const n = now();
+  let doneCount = 0;
+  let html = '';
+  state.routine.forEach((item, idx) => {
+    const start = toMin(item.time);
+    const end = start + item.dur;
+    let status = '';
+    if(item.done) { status = '<span class="ri-status status-done">✓ Done</span>'; doneCount++; }
+    else if(n >= start && n < end) status = '<span class="ri-status status-now">● Now</span>';
+    else if(n < start && idx > 0) status = '<span class="ri-status status-next">Next</span>';
+    else if(n >= end) status = '<span class="ri-status status-miss">Missed</span>';
+
+    html += `<div class="routine-item ${item.done?'done':''}" onclick="toggleDone(${item.id})" style="animation-delay:${idx*0.05}s">
+      <div class="ri-icon" style="background:${item.bg}">${item.icon}</div>
+      <div class="ri-info">
+        <div class="ri-name">${item.name}</div>
+        <div class="ri-time">${fmtTime(item.time)}${item.dur?` · ${item.dur} min`:''} ${status}</div>
+      </div>
+      <div class="ri-check">${item.done?'<i class="fas fa-check" style="font-size:0.7rem"></i>':''}</div>
+    </div>`;
+  });
+  list.innerHTML = html;
+  const pct = Math.round(doneCount / state.routine.length * 100);
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-pct').textContent = pct + '%';
+}
+
+function toggleDone(id) {
+  const item = state.routine.find(r=>r.id===id);
+  if(!item) return;
+  item.done = !item.done;
+  save();
+  renderRoutine();
+  renderStats();
+  showToast(item.done ? `✅ ${item.name} marked done!` : `↩️ ${item.name} unmarked`);
+  if(item.done) speak(`Great job! ${item.name} is done.`);
+}
+
+// ── SCHEDULE ──
+function renderSchedule() {
+  const list = document.getElementById('schedule-list');
+  const colors = ['#a78bfa','#34d399','#f472b6','#fbbf24','#60a5fa','#fb923c'];
+  let html = '';
+  state.routine.forEach((item, idx) => {
+    const c = colors[idx % colors.length];
+    html += `<div class="time-block">
+      <div class="time-col"><div class="time-label">${item.time}</div></div>
+      <div style="display:flex;gap:0.6rem;flex:1;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0;padding-top:4px">
+          <div class="time-dot" style="background:${c}"></div>
+          ${idx<state.routine.length-1?`<div style="width:2px;height:40px;background:linear-gradient(${c},transparent);margin-top:2px"></div>`:''}
+        </div>
+        <div class="sched-card" style="border-left-color:${c}" onclick="openEditRoutine(${item.id})">
+          <div class="sched-name">${item.icon} ${item.name}</div>
+          <div class="sched-dur">${item.dur?item.dur+' minutes':'End of day'} · Tap to edit</div>
+        </div>
+      </div>
+    </div>`;
+  });
+  list.innerHTML = html;
+}
+
+function openEditRoutine(id) {
+  const item = state.routine.find(r=>r.id===id);
+  if(!item) return;
+  document.getElementById('modal-title').textContent = `Edit: ${item.icon} ${item.name}`;
+  document.getElementById('modal-body').innerHTML = `
+    <label style="font-size:0.78rem;color:var(--muted);display:block;margin-bottom:0.3rem">Time</label>
+    <input type="time" class="inp" id="edit-time" value="${item.time}">
+    <label style="font-size:0.78rem;color:var(--muted);display:block;margin-bottom:0.3rem">Duration (minutes)</label>
+    <input type="number" class="inp" id="edit-dur" value="${item.dur}" min="0" max="480">
+    <button class="btn-primary" onclick="saveRoutineEdit(${id})">Save Changes</button>
+    <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+  `;
+  openModal();
+}
+
+function saveRoutineEdit(id) {
+  const item = state.routine.find(r=>r.id===id);
+  item.time = document.getElementById('edit-time').value;
+  item.dur = parseInt(document.getElementById('edit-dur').value)||0;
+  save(); closeModal(); renderRoutine(); renderSchedule();
+  showToast('✅ Schedule updated!');
+}
+
+// ── NOTES ──
+function renderNotes() {
+  const list = document.getElementById('notes-list');
+  if(!state.notes.length) { list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:2rem;font-size:0.85rem">No notes yet. Tap + to add!</div>'; return; }
+  list.innerHTML = state.notes.map((n,i)=>`
+    <div class="note-card" style="animation-delay:${i*0.06}s" onclick="openNoteView(${n.id})">
+      <div class="note-title">${n.title}</div>
+      <div class="note-preview">${n.content}</div>
+      <div class="note-meta">${n.date} · <span style="color:var(--red);cursor:pointer" onclick="deleteNote(event,${n.id})">Delete</span></div>
+    </div>
+  `).join('');
+}
+
+function openNoteModal(id) {
+  const editing = id ? state.notes.find(n=>n.id===id) : null;
+  document.getElementById('modal-title').textContent = editing ? 'Edit Note' : '📝 New Note';
+  document.getElementById('modal-body').innerHTML = `
+    <input type="text" class="inp" id="note-title" placeholder="Title..." value="${editing?editing.title:''}">
+    <textarea class="inp" id="note-content" placeholder="Write your note...">${editing?editing.content:''}</textarea>
+    <button class="btn-primary" onclick="saveNote(${id||''})">Save Note</button>
+    <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+  `;
+  openModal();
+}
+
+function openNoteView(id) {
+  const note = state.notes.find(n=>n.id===id);
+  if(!note) return;
+  document.getElementById('modal-title').textContent = note.title;
+  document.getElementById('modal-body').innerHTML = `
+    <div style="white-space:pre-wrap;font-size:0.88rem;line-height:1.8;color:var(--muted);margin-bottom:1rem">${note.content}</div>
+    <button class="btn-primary" onclick="openNoteModal(${id});document.querySelector('.modal-title').textContent='Edit Note'">Edit</button>
+    <button class="btn-cancel" onclick="closeModal()">Close</button>
+  `;
+  openModal();
+}
+
+function saveNote(id) {
+  const title = document.getElementById('note-title').value.trim();
+  const content = document.getElementById('note-content').value.trim();
+  if(!title) { showToast('Please add a title!'); return; }
+  if(id) {
+    const note = state.notes.find(n=>n.id===id);
+    note.title = title; note.content = content;
+  } else {
+    state.notes.unshift({ id: Date.now(), title, content, date: 'Today' });
+  }
+  save(); closeModal(); renderNotes(); showToast('✅ Note saved!');
+}
+
+function deleteNote(e, id) {
+  e.stopPropagation();
+  state.notes = state.notes.filter(n=>n.id!==id);
+  save(); renderNotes(); showToast('🗑️ Note deleted');
+}
+
+// ── STATS ──
+function renderStats() {
+  const done = state.routine.filter(r=>r.done).length;
+  const pending = state.routine.filter(r=>!r.done).length;
+  const pct = Math.round(done/state.routine.length*100);
+  document.getElementById('stat-streak').textContent = '🔥 ' + state.streak;
+  document.getElementById('stat-done').textContent = done;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-pct').textContent = pct + '%';
+
+  const days = ['S','M','T','W','T','F','S'];
+  const today = new Date().getDay();
+  document.getElementById('week-row').innerHTML = days.map((d,i)=>`
+    <div class="day-dot">
+      <div class="day-circle ${i<today?'done':i===today?'today':''}">${d}</div>
+      <div class="day-lbl">${['Su','Mo','Tu','We','Th','Fr','Sa'][i]}</div>
+    </div>
+  `).join('');
+
+  const missed = state.routine.filter(r => {
+    const end = toMin(r.time) + r.dur;
+    return !r.done && now() > end && r.dur > 0;
+  });
+  document.getElementById('missed-list').innerHTML = missed.length
+    ? missed.map(m=>`<div style="padding:0.4rem 0;border-bottom:1px solid var(--border);color:var(--red)">⚠️ ${m.name} at ${fmtTime(m.time)}</div>`).join('')
+    : 'No missed tasks yet today! 🎉';
+}
+
+// ── WAKEUP / BEDTIME ──
+function updateWakeupDisplay() {
+  document.getElementById('wakeup-display').textContent = state.wakeup;
+  document.getElementById('wakeup-input').value = state.wakeup;
+  renderGreeting();
+}
+function updateBedDisplay() {
+  document.getElementById('bedtime-display').textContent = state.bedtime;
+  document.getElementById('bedtime-input').value = state.bedtime;
+}
+function updateWakeup(val) { state.wakeup = val; save(); updateWakeupDisplay(); showToast('⏰ Wake-up set to ' + fmtTime(val)); }
+function updateBedtime(val) { state.bedtime = val; save(); updateBedDisplay(); showToast('🛏 Bedtime set to ' + fmtTime(val)); }
+
+function openWakeupEdit() {
+  document.getElementById('modal-title').textContent = '⏰ Wake Up Time';
+  document.getElementById('modal-body').innerHTML = `
+    <input type="time" class="inp" id="wu-inp" value="${state.wakeup}">
+    <button class="btn-primary" onclick="updateWakeup(document.getElementById('wu-inp').value);closeModal()">Set Alarm</button>
+    <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+  `;
+  openModal();
+}
+function openBedEdit() {
+  document.getElementById('modal-title').textContent = '🛏 Bedtime';
+  document.getElementById('modal-body').innerHTML = `
+    <input type="time" class="inp" id="bed-inp" value="${state.bedtime}">
+    <button class="btn-primary" onclick="updateBedtime(document.getElementById('bed-inp').value);closeModal()">Set Bedtime</button>
+    <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+  `;
+  openModal();
+}
+
+// ── MUSIC ──
+function selectGenre(el, name) {
+  document.querySelectorAll('.genre-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  state.genre = name;
+  save();
+  document.getElementById('sel-genre-label').textContent = name;
+  showToast('🎵 Morning music: ' + name);
+  speak('Great choice! I\\'ll play ' + name.replace(/[^\\w\\s]/g,'') + ' when you wake up.');
+}
+
+// ── VOICE ──
+let voiceActive = false;
+let recognition = null;
+
+document.getElementById('voice-btn').addEventListener('click', () => {
+  if(voiceActive) closeVoice();
+  else openVoice();
+});
+
+function openVoice() {
+  voiceActive = true;
+  document.getElementById('voice-overlay').classList.add('show');
+  document.getElementById('voice-btn').classList.add('listening');
+
+  if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SR();
+    recognition.continuous = false;
+    recognition.lang = 'en-IN';
+    recognition.onresult = e => {
+      const said = e.results[0][0].transcript;
+      document.getElementById('voice-heard').textContent = '"' + said + '"';
+      handleVoiceCommand(said.toLowerCase());
+    };
+    recognition.onerror = () => {
+      document.getElementById('voice-heard').textContent = 'Could not hear. Please try again.';
+    };
+    recognition.onend = () => { setTimeout(closeVoice, 1500); };
+    recognition.start();
+  } else {
+    document.getElementById('voice-heard').textContent = 'Voice not supported on this browser';
+    setTimeout(closeVoice, 2000);
+  }
+}
+
+function closeVoice() {
+  voiceActive = false;
+  document.getElementById('voice-overlay').classList.remove('show');
+  document.getElementById('voice-btn').classList.remove('listening');
+  if(recognition) { recognition.stop(); recognition = null; }
+}
+
+function handleVoiceCommand(cmd) {
+  if(cmd.includes('remind') || cmd.includes('reminder')) {
+    const msg = cmd.replace(/lushi|remind me|reminder/gi,'').trim();
+    showToast('🔔 Reminder set: ' + msg);
+    speak('Got it! I\\'ll remind you to ' + msg);
+  } else if(cmd.includes('mark') || cmd.includes('done') || cmd.includes('complete')) {
+    const item = state.routine.find(r => cmd.includes(r.name.toLowerCase()));
+    if(item) { item.done = true; save(); renderRoutine(); speak(item.name + ' marked as done! Well done!'); }
+    else speak('I could not find that task. Try saying the task name clearly.');
+  } else if(cmd.includes('wake up') || cmd.includes('alarm')) {
+    speak('Your wake up time is set to ' + state.wakeup);
+  } else if(cmd.includes('schedule') || cmd.includes('today')) {
+    const next = state.routine.find(r=>!r.done && toMin(r.time)>now());
+    if(next) speak('Your next task is ' + next.name + ' at ' + fmtTime(next.time));
+  } else if(cmd.includes('note')) {
+    speak('Opening notes for you!');
+    setTimeout(()=>{ switchPage('notes', document.querySelectorAll('.nav-item')[2]); openNoteModal(); }, 800);
+  } else {
+    speak('I heard you! Say: remind me to something, or mark yoga done, or what\\'s next.');
+  }
+}
+
+function speak(text) {
+  const toggle = document.getElementById('voice-toggle');
+  if(!toggle.classList.contains('on')) return;
+  if('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.lang = 'en-IN';
+    utt.rate = 0.95;
+    utt.pitch = 1.1;
+    window.speechSynthesis.speak(utt);
+  }
+}
+
+// ── REMINDERS ──
+function checkReminders() {
+  const n = now();
+  state.routine.forEach(item => {
+    const start = toMin(item.time);
+    if(!item.done && Math.abs(n - start) <= 1) {
+      showToast(`⏰ Time for: ${item.name}!`);
+      speak('Hey Gowri! It\\'s time for ' + item.name + '. Let\\'s go!');
+    }
+  });
+}
+
+// ── NAVIGATION ──
+function switchPage(name, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('scroll-area').scrollTop = 0;
+  if(name==='stats') renderStats();
+}
+
+// ── MODAL ──
+function openModal() {
+  document.getElementById('modal-overlay').classList.add('show');
+}
+function closeModal(e) {
+  if(!e || e.target===document.getElementById('modal-overlay'))
+    document.getElementById('modal-overlay').classList.remove('show');
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// ── TOGGLES ──
+function toggleSetting(el) { el.classList.toggle('on'); }
+
+// ── RESET ──
+function resetApp() {
+  if(confirm('Reset all data?')) {
+    localStorage.clear();
+    state.routine = JSON.parse(JSON.stringify(defaultRoutine));
+    state.notes = JSON.parse(JSON.stringify(defaultNotes));
+    state.wakeup = '06:00'; state.bedtime = '22:30';
+    save(); renderRoutine(); renderNotes(); renderStats(); updateWakeupDisplay(); updateBedDisplay();
+    showToast('🔄 App reset!');
+  }
+}
+
+// FAB for notes
+document.getElementById('scroll-area').addEventListener('scroll', function() {});
+</script>
+</body>
+</html>
